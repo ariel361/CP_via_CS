@@ -75,8 +75,8 @@ def load_adjacency_matrix(path: str) -> tuple[np.ndarray, np.ndarray]:
     adjacency_matrix_smaller : ndarray, shape (C, C)
     """
     data = np.load(path)
-    adjacency_matrix = data["full_matrix"]
-    adjacency_matrix_smaller = data["small_matrix"]
+    adjacency_matrix = data["Adjacency_matrix"]
+    adjacency_matrix_smaller = adjacency_matrix[:,:-1]
     return adjacency_matrix, adjacency_matrix_smaller
 
 

@@ -6,7 +6,7 @@ RAPS regularization, and number of Monte Carlo trials.
 """
 
 # ── Coverage ──────────────────────────────────────────────────────────────────
-ALPHA = 0.05          # target miscoverage rate; 1-alpha is the desired coverage
+ALPHA = 0.1          # target miscoverage rate; 1-alpha is the desired coverage
 
 # ── Dataset ───────────────────────────────────────────────────────────────────
 NUM_CLASS       = 100

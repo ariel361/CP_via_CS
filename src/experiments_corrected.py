@@ -41,8 +41,8 @@ from .score_functions import (
     build_reg_vec,
     raps_cal_scores_binary_dist,
     raps_cal_scores_superclass,
-    build_prediction_sets_binary_dist,
-    build_prediction_sets_superclass,
+    build_raps_prediction_sets_binary_dist,
+    build_raps_prediction_sets_superclass,
     conformal_quantile,
 )
 from .metrics import (
@@ -104,7 +104,7 @@ def run_raps_ma_avg_opt_corrected(
         )
         qhat = conformal_quantile(scores, n_cal, alpha)
 
-        prediction_sets = build_prediction_sets_superclass(
+        prediction_sets = build_raps_prediction_sets_superclass(
             test_smx, reg_vec, adjacency_matrix, adjacency_matrix_smaller,
             opt_lamda, qhat, num_class, size_sc, rand=rand,
             disallow_zero_sets=disallow_zero,
@@ -185,7 +185,7 @@ def _run_binary_dist_corrected(
                 cal_smx, cal_labels, reg_vec, penalty_matrix, lam, rand=rand,
             )
             qhat = conformal_quantile(scores, n_cal, alpha)
-            ps_val = build_prediction_sets_binary_dist(
+            ps_val = build_raps_prediction_sets_binary_dist(
                 val_smx, reg_vec, penalty_matrix, lam, qhat,
                 rand=rand, disallow_zero_sets=disallow_zero,
             )
@@ -201,7 +201,7 @@ def _run_binary_dist_corrected(
         )
         qhat = conformal_quantile(scores, n_cal, alpha)
 
-        prediction_sets = build_prediction_sets_binary_dist(
+        prediction_sets = build_raps_prediction_sets_binary_dist(
             test_smx, reg_vec, penalty_matrix, opt_lamda, qhat,
             rand=rand, disallow_zero_sets=disallow_zero,
         )
@@ -249,7 +249,7 @@ def _select_lambda_by_avg_size_superclass(
             adjacency_matrix_smaller, lam, rand=rand,
         )
         qhat = conformal_quantile(scores, n_cal, alpha)
-        ps_val = build_prediction_sets_superclass(
+        ps_val = build_raps_prediction_sets_superclass(
             val_smx, reg_vec, adjacency_matrix, adjacency_matrix_smaller,
             lam, qhat, num_class, size_sc, rand=rand,
             disallow_zero_sets=disallow_zero,

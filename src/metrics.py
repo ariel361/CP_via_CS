@@ -95,7 +95,7 @@ def print_metrics(
     worst_class: int,
     top5_dev: float,
     sizes: dict,
-    mean_sc: float | None = None,
+    mean_sc: float,
 ) -> None:
     """Pretty-print the standard metric block."""
     print(f"Marginal coverage            : {coverage:.4f}")
