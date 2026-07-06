@@ -7,7 +7,7 @@ prediction when lambda is selected via a validation split, because the same
 calibration data is reused for both lambda selection and final quantile
 estimation.  They are kept here exactly as in the paper for reproducibility.
 
-See experiments_corrected.py for the exchangeability-safe versions.
+See experiments_tuned_lambda_exchangability.py for the exchangeability-safe versions.
 
 Public API
 ----------
@@ -155,7 +155,7 @@ def run_raps_ma_avg_opt(
     calibration (pure baseline mode).
 
     NOTE: reuses cal set for both lambda selection and qhat estimation –
-    this violates exchangeability.  See run_raps_ma_avg_opt_corrected for
+    this violates exchangeability.  See run_raps_ma_avg_opt_exchangability for
     the fixed version.
     """
     cfg = _make_config(config)
@@ -262,7 +262,7 @@ def run_raps_ma_binary_dist_avg_opt(
     RAPS + binary-distance penalty (MA adjacency matrix).
 
     Lambda selected by min avg-set-size on a validation fold.
-    Not exchangeability-safe – see corrected version.
+    Not exchangeability-safe – see exchangability version.
     """
     return _run_binary_dist_avg_opt(
         probabilities, labels, adjacency_matrix, adjacency_matrix_real,
@@ -283,7 +283,7 @@ def run_raps_ms_avg_opt(
     RAPS + binary-distance penalty (MS / cosine-similarity adjacency matrix).
 
     Lambda selected by min avg-set-size on a validation fold.
-    Not exchangeability-safe – see corrected version.
+    Not exchangeability-safe – see exchangability version.
     """
     return _run_binary_dist_avg_opt(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,

@@ -3,7 +3,7 @@ score_functions.py
 ==================
 Low-level building blocks for conformal score computation and prediction-set
 construction.  All functions are pure NumPy with no side-effects so they can
-be shared freely across the original (paper-replication) and corrected
+be shared freely across the original (paper-replication) and exchangability
 (exchangeability-safe) experiment runners.
 
 Score families

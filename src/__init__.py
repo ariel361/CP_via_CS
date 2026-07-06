@@ -8,7 +8,7 @@ Import individual submodules directly (as shown in demo.ipynb):
     import src.score_functions as score_functions
     import src.metrics as metrics
     import src.experiments_original as experiments_original
-    import src.experiments_corrected as experiments_corrected
+    import src.experiments_exchangability as experiments_exchangability
     import src.experiments_lac as experiments_lac
     import src.experiments_saps as experiments_saps
 """

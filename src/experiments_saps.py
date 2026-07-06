@@ -7,14 +7,14 @@ SAPS (CP_via_CS paper) uses a rank-based score:
   s(x, y) = U · p_max               if y is the top-1 class
            = p_max + (L(y)−1+U)·λ₂  otherwise
 
-Two penalty variants are implemented, each in original and corrected forms.
+Two penalty variants are implemented, each in original and exchangability forms.
 
 Original (not exchangeability-safe when λ > 0):
     run_saps_baseline
     run_saps_ms_binary_dist_avg_opt
 
-Corrected (exchangeability-safe):
-    run_saps_ms_binary_dist_avg_opt_corrected
+(exchangeability-safe):
+    run_saps_ms_binary_dist_avg_opt_exchangability
 """
 
 from __future__ import annotations
@@ -37,7 +37,7 @@ from .metrics import (
     print_metrics,
 )
 from .experiments_original import _make_config, _aggregate, _format_for_print
-from .experiments_corrected import _three_way_split
+from .experiments_tuned_lambda_exchangability import _three_way_split
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -108,7 +108,7 @@ def run_saps_ms_binary_dist_avg_opt(
     λ₂ is fixed (controls rank spacing); λ₃ is selected on a validation fold
     by minimising average set size.
 
-    Not exchangeability-safe – see corrected version.
+    Not exchangeability-safe – see exchangability version.
 
     Parameters
     ----------
@@ -117,11 +117,11 @@ def run_saps_ms_binary_dist_avg_opt(
     """
     return _run_saps_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_2, lamda_3_values, corrected=False, config=config,
+        lamda_2, lamda_3_values, exchangability=False, config=config,
     )
 
 
-def run_saps_ms_binary_dist_avg_opt_corrected(
+def run_saps_ms_binary_dist_avg_opt_exchangability(
     probabilities: np.ndarray,
     labels: np.ndarray,
     adjacency_matrix: np.ndarray,
@@ -139,7 +139,7 @@ def run_saps_ms_binary_dist_avg_opt_corrected(
     """
     return _run_saps_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_2, lamda_3_values, corrected=True, config=config,
+        lamda_2, lamda_3_values, exchangability=True, config=config,
     )
 
 
@@ -149,7 +149,7 @@ def run_saps_ms_binary_dist_avg_opt_corrected(
 
 def _run_saps_binary_dist(
     probabilities, labels, adjacency_matrix, penalty_matrix,
-    lamda_2, lamda_3_values, *, corrected: bool, config,
+    lamda_2, lamda_3_values, *, exchangability: bool, config,
 ) -> dict:
     cfg      = _make_config(config)
     alpha    = cfg["alpha"];  num_class = cfg["num_class"]
@@ -161,7 +161,7 @@ def _run_saps_binary_dist(
     sc_acc   = 0.0;  avg_sizes: list[float] = []
 
     for _ in range(T_):
-        if corrected:
+        if exchangability:
             cal_smx, cal_lbl, val_smx, val_lbl, test_smx, test_lbl, n_cal = \
                 _three_way_split(probabilities, labels, cfg)
         else:
@@ -187,7 +187,7 @@ def _run_saps_binary_dist(
                 cal_smx, cal_lbl, lamda_2, lam3, penalty_matrix, rand=rand
             )
             qh = conformal_quantile(sc, n_cal, alpha)
-            if corrected or not baseline:
+            if exchangability or not baseline:
                 ps_v = build_saps_prediction_sets_binary_dist(
                     val_smx, lamda_2, lam3, penalty_matrix, qh, rand=rand
                 )

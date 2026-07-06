@@ -1,5 +1,5 @@
 """
-experiments_corrected.py – exchangeability-safe experiment runners.
+experiments_exchangability.py – exchangeability-safe experiment runners.
 
 The functions here fix the data-leakage issue present in experiments_original.py:
 when lambda is selected via a validation fold, that fold must be kept strictly
@@ -18,14 +18,14 @@ Each function in this module maintains three non-overlapping splits per trial:
 
 Public API
 ----------
-run_raps_ma_avg_opt_corrected(...)
-    Corrected MA superclass-mass penalty, λ chosen on val by min avg-set-size.
+run_raps_ma_avg_opt_exchangability(...)
+    exchangability MA superclass-mass penalty, λ chosen on val by min avg-set-size.
 
-run_raps_ms_avg_opt_corrected(...)
-    Corrected MS binary-distance penalty, λ chosen on val by min avg-set-size.
+run_raps_ms_avg_opt_exchangability(...)
+    exchangability MS binary-distance penalty, λ chosen on val by min avg-set-size.
 
-run_raps_ma_binary_dist_avg_opt_corrected(...)
-    Corrected MA binary-distance penalty, λ chosen on val by min avg-set-size.
+run_raps_ma_binary_dist_avg_opt_exchangability(...)
+    exchangability MA binary-distance penalty, λ chosen on val by min avg-set-size.
 """
 
 from __future__ import annotations
@@ -58,10 +58,10 @@ from .experiments_original import _aggregate, _format_for_print, _make_config
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MA – superclass-mass penalty (corrected)
+# MA – superclass-mass penalty (exchangability)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_raps_ma_avg_opt_corrected(
+def run_raps_ma_avg_opt_exchangability(
     probabilities: np.ndarray,
     labels: np.ndarray,
     adjacency_matrix: np.ndarray,
@@ -123,10 +123,10 @@ def run_raps_ma_avg_opt_corrected(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MA binary-distance penalty (corrected)
+# MA binary-distance penalty (exchangability)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_raps_ma_binary_dist_avg_opt_corrected(
+def run_raps_ma_binary_dist_avg_opt_exchangability(
     probabilities: np.ndarray,
     labels: np.ndarray,
     adjacency_matrix: np.ndarray,
@@ -138,13 +138,13 @@ def run_raps_ma_binary_dist_avg_opt_corrected(
     """
     RAPS + binary-distance penalty (MA) – exchangeability-safe version.
     """
-    return _run_binary_dist_corrected(
+    return _run_binary_dist_exchangability(
         probabilities, labels, adjacency_matrix, adjacency_matrix_real,
         lamda_2_values, config=config,
     )
 
 
-def run_raps_ms_avg_opt_corrected(
+def run_raps_ms_avg_opt_exchangability(
     probabilities: np.ndarray,
     labels: np.ndarray,
     adjacency_matrix: np.ndarray,
@@ -156,13 +156,13 @@ def run_raps_ms_avg_opt_corrected(
     """
     RAPS + binary-distance penalty (MS cosine-similarity) – exchangeability-safe version.
     """
-    return _run_binary_dist_corrected(
+    return _run_binary_dist_exchangability(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
         lamda_2_values, config=config,
     )
 
 
-def _run_binary_dist_corrected(
+def _run_binary_dist_exchangability(
     probabilities, labels, adjacency_matrix, penalty_matrix, lamda_2_values, *, config,
 ) -> dict:
     cfg = _make_config(config)
