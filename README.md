@@ -10,7 +10,6 @@ This is the code accompanying the paper: [Enhancing Conformal Prediction via Cla
 
 [![arXiv](https://img.shields.io/badge/arXiv-2511.19359-b31b1b.svg)](https://arxiv.org/abs/2511.19359)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 *Official code for the paper. Modular implementations of RAPS, LAC, and SAPS with class-similarity penalties for CIFAR-100.*
 
@@ -29,7 +28,7 @@ We introduce two penalty variants on top of established score functions:
 | Superclass mass | **MA** | Cumulative softmax mass from classes outside the true superclass, accumulated up to the rank of the true label |
 | Binary distance | **MS** | `λ · (1 − A[y, ŷ])` where `A` is a cosine-similarity matrix between class embeddings and `ŷ` is the top-1 prediction |
 
-Both penalties are applied to three score families — **RAPS**, **LAC**, and **SAPS** — and each experiment comes in an *original* (paper-replication) and a *exchangeability* (exchangeability-safe) version.
+Both penalties are applied to three score families — **RAPS**, **LAC**, and **SAPS**
 
 ---
 
@@ -174,11 +173,11 @@ Each experiment runner prints and returns:
 If you use this code, please cite:
 
 ```bibtex
-@article{dabah2024enhancing,
+@article{fargion2026enhancing,
   title   = {Enhancing Conformal Prediction via Class Similarity},
-  author  = {Dabah, Ariel and Tirer, Tom},
+  author  = {Fargion, Ariel and Dabah, Lahav and Tirer, Tom},
   journal = {arXiv preprint arXiv:2511.19359},
-  year    = {2024}
+  year    = {2026}
 }
 ```
 
@@ -188,4 +187,4 @@ If you use this code, please cite:
 
 - Angelopoulos, A. N., et al. *Uncertainty Sets for Image Classifiers using Conformal Prediction.* ICLR 2021. [arXiv:2009.14193](https://arxiv.org/abs/2009.14193)
 - Sadinle, M., Lei, J., & Wasserman, L. *Least Ambiguous Set-Valued Classifiers with Bounded Error Levels.* JASA 2019. [arXiv:1609.00451](https://arxiv.org/abs/1609.00451)
-- Huang, X., et al. *Conformal Prediction for Deep Classifier via Label Ranking.* [arXiv:2310.06430](https://arxiv.org/abs/2310.06430)
+- Huang, X., et al. *Conformal Prediction for Deep Classifier via Label Ranking.* ICML 2024. [arXiv:2310.06430](https://arxiv.org/abs/2310.06430)
