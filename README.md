@@ -37,17 +37,17 @@ Both penalties are applied to three score families — **RAPS**, **LAC**, and **
 ```
 CP_via_CS/
 ├── src/
-│   ├── config.py                # all hyperparameters in one place
-│   ├── data_loader.py           # load logits, adjacency & similarity matrices
-│   ├── score_functions.py       # RAPS · LAC · SAPS score + prediction-set builders
-│   ├── metrics.py               # coverage and set-size evaluation helpers
-│   ├── experiments_original.py  # RAPS paper-replication runners
-│   ├── experiments_tuned_lambda_exchangeability.py # RAPS exchangeability-safe runners
-│   ├── experiments_lac.py       # LAC runners (original + exchangeability)
-│   └── experiments_saps.py      # SAPS runners (original + exchangeability)
+│   ├── config.py     
+│   ├── data_loader.py  
+│   ├── score_functions.py    
+│   ├── metrics.py       
+│   ├── experiments_original.py 
+│   ├── experiments_tuned_lambda_strict_split.py
+│   ├── experiments_lac.py  
+│   └── experiments_saps.py   
 ├── notebooks/
-│   └── demo.ipynb               # end-to-end walkthrough of all variants
-├── data/                        # place your .npz data files here (see below)
+│   └── demo_.ipynb     
+├── data/     
 └── README.md
 ```
 
@@ -85,57 +85,11 @@ When $\lambda > 0$, selecting it on a held-out validation fold and then reusing 
 | Protocol | Cal / Val / Test | Coverage guarantee |
 |:---------|:----------------:|:------------------:|
 | `_original` | Val merged back into Cal after λ selection | ✗ when λ > 0 |
-| `_exchangeability` | Strict three-way split throughout | ✓ always |
+| `_strict_split` | Strict three-way split throughout | ✓ always |
 
 ---
 
-## Quick start
-
-```python
-import sys
-sys.path.insert(0, '.')   # run from repo root
-
-import src.data_loader as data_loader
-import src.experiments_original as experiments_original
-import src.experiments_tuned_lambda_exchangeability as experiments_tuned_lambda_exchangeability
-import src.experiments_lac as experiments_lac
-import src.experiments_saps as experiments_saps
-
-# Load data
-probabilities, labels = data_loader.load_logits('data/Cifar100_ResNet50_logits_new.npz')
-adj, adj_small        = data_loader.load_adjacency_matrix('data/Adjacency_matrix.npz')
-adj_ms                = data_loader.load_similarity_matrix_cosine('data/similarity_matrix_cosine_resnet50.npz')
-
-lam_grid = [0, 0.01, 0.03, 0.06, 0.1, 0.15, 0.2, 0.3]
-
-# RAPS baseline
-experiments_original.run_raps_baseline(probabilities, labels)
-
-# RAPS + MS binary-distance penalty (exchangeability)
-experiments_tuned_lambda_exchangeability.run_raps_ms_avg_opt_exchangeability(
-    probabilities, labels, adj, adj_ms, lam_grid
-)
-
-# LAC + MS binary-distance penalty (exchangeability)
-experiments_lac.run_lac_ms_binary_dist_avg_opt_exchangeability(
-    probabilities, labels, adj, adj_ms, lam_grid
-)
-
-# SAPS + MS binary-distance penalty (exchangeability)
-experiments_saps.run_saps_ms_binary_dist_avg_opt_exchangeability(
-    probabilities, labels, adj, adj_ms,
-    lamda_2=0.2, lamda_3_values=lam_grid,
-)
-```
-
-Override any hyperparameter inline:
-
-```python
-experiments_original.run_raps_baseline(
-    probabilities, labels,
-    config={"alpha": 0.1, "T": 100, "lam_reg": 0.02},
-)
-```
+## Example
 
 See [`notebooks/demo.ipynb`](notebooks/demo.ipynb) for a full walkthrough with results comparison.
 
