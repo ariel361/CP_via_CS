@@ -257,16 +257,18 @@ def run_raps_ma_binary_dist_avg_opt(
     lamda_2_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
     RAPS + binary-distance penalty (MA adjacency matrix).
 
-    Lambda selected by min avg-set-size on a validation fold.
+    Lambda is selected by min avg-set-size on a validation fold by default.
+    If fixed_lambda is provided, that value is used directly instead.
     Not exchangeability-safe – see strict_split version.
     """
     return _run_binary_dist_avg_opt(
         probabilities, labels, adjacency_matrix, adjacency_matrix_real,
-        lamda_2_values, config=config,
+        lamda_2_values, config=config, fixed_lambda=fixed_lambda,
     )
 
 
@@ -278,22 +280,45 @@ def run_raps_ms_avg_opt(
     lamda_2_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
     RAPS + binary-distance penalty (MS / cosine-similarity adjacency matrix).
 
-    Lambda selected by min avg-set-size on a validation fold.
+    Lambda is selected by min avg-set-size on a validation fold by default.
+    If fixed_lambda is provided, that value is used directly instead.
     Not exchangeability-safe – see strict_split version.
     """
     return _run_binary_dist_avg_opt(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_2_values, config=config,
+        lamda_2_values, config=config, fixed_lambda=fixed_lambda,
+    )
+
+
+def run_raps_ms_avg_opt_fixed_lambda(
+    probabilities: np.ndarray,
+    labels: np.ndarray,
+    adjacency_matrix: np.ndarray,
+    adjacency_matrix_ms: np.ndarray,
+    fixed_lambda: float,
+    *,
+    config: dict | None = None,
+) -> dict:
+    """Convenience wrapper that runs the MS binary-distance runner with a fixed lambda."""
+    return run_raps_ms_avg_opt(
+        probabilities,
+        labels,
+        adjacency_matrix,
+        adjacency_matrix_ms,
+        [0.0],
+        config=config,
+        fixed_lambda=fixed_lambda,
     )
 
 
 def _run_binary_dist_avg_opt(
     probabilities, labels, adjacency_matrix, penalty_matrix, lamda_2_values,
-    *, config,
+    *, config, fixed_lambda: float | None = None,
 ) -> dict:
     """Shared implementation for MA/MS binary-distance runners."""
     cfg = _make_config(config)
@@ -329,26 +354,29 @@ def _run_binary_dist_avg_opt(
         cal_smx, test_smx     = probabilities[cal_idx], probabilities[test_idx]
         cal_labels, test_labels = labels[cal_idx], labels[test_idx]
 
-        opt_lamda = 0; opt_size = float("inf")
+        if fixed_lambda is not None:
+            opt_lamda = float(fixed_lambda)
+        else:
+            opt_lamda = 0; opt_size = float("inf")
 
-        for lam in lamda_2_values:
-            scores = raps_cal_scores_binary_dist(
-                cal_smx, cal_labels, reg_vec, penalty_matrix, lam, rand=rand,
-            )
-            qhat = conformal_quantile(scores, n_cal_eff, alpha)
+            for lam in lamda_2_values:
+                scores = raps_cal_scores_binary_dist(
+                    cal_smx, cal_labels, reg_vec, penalty_matrix, lam, rand=rand,
+                )
+                qhat = conformal_quantile(scores, n_cal_eff, alpha)
 
-            if baseline_only:
-                break
+                if baseline_only:
+                    break
 
-            ps_val = build_raps_prediction_sets_binary_dist(
-                val_smx, reg_vec, penalty_matrix, lam, qhat,
-                rand=rand, disallow_zero_sets=disallow_zero,
-            )
-            size_val = ps_val.sum(axis=1).mean()
-            if lam == 0:
-                opt_size = size_val + 10; opt_lamda = 0
-            elif size_val < opt_size:
-                opt_size = size_val; opt_lamda = lam
+                ps_val = build_raps_prediction_sets_binary_dist(
+                    val_smx, reg_vec, penalty_matrix, lam, qhat,
+                    rand=rand, disallow_zero_sets=disallow_zero,
+                )
+                size_val = ps_val.sum(axis=1).mean()
+                if lam == 0:
+                    opt_size = size_val + 10; opt_lamda = 0
+                elif size_val < opt_size:
+                    opt_size = size_val; opt_lamda = lam
 
         scores = raps_cal_scores_binary_dist(
             cal_smx, cal_labels, reg_vec, penalty_matrix, opt_lamda, rand=rand,

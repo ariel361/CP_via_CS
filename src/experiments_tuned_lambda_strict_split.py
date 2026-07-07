@@ -134,13 +134,15 @@ def run_raps_ma_binary_dist_avg_opt_strict_split(
     lamda_2_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
-    RAPS + binary-distance penalty (MA) – exchangeability-safe version.
+    RAPS + binary-distance penalty (MA) – strict-split version.
+    If fixed_lambda is provided, that value is used directly instead of tuning.
     """
     return _run_binary_dist_strict_split(
         probabilities, labels, adjacency_matrix, adjacency_matrix_real,
-        lamda_2_values, config=config,
+        lamda_2_values, config=config, fixed_lambda=fixed_lambda,
     )
 
 
@@ -152,18 +154,21 @@ def run_raps_ms_avg_opt_strict_split(
     lamda_2_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
-    RAPS + binary-distance penalty (MS cosine-similarity) – exchangeability-safe version.
+    RAPS + binary-distance penalty (MS cosine-similarity) – strict-split version.
+    If fixed_lambda is provided, that value is used directly instead of tuning.
     """
     return _run_binary_dist_strict_split(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_2_values, config=config,
+        lamda_2_values, config=config, fixed_lambda=fixed_lambda,
     )
 
 
 def _run_binary_dist_strict_split(
-    probabilities, labels, adjacency_matrix, penalty_matrix, lamda_2_values, *, config,
+    probabilities, labels, adjacency_matrix, penalty_matrix, lamda_2_values,
+    *, config, fixed_lambda: float | None = None,
 ) -> dict:
     cfg = _make_config(config)
     alpha = cfg["alpha"]; num_class = cfg["num_class"]
@@ -178,22 +183,25 @@ def _run_binary_dist_strict_split(
         cal_smx, cal_labels, val_smx, val_labels, test_smx, test_labels, n_cal = \
             _three_way_split(probabilities, labels, cfg)
 
-        opt_lamda = 0; opt_size = float("inf")
-        for lam in lamda_2_values:
-            # evaluate on val using qhat from cal
-            scores = raps_cal_scores_binary_dist(
-                cal_smx, cal_labels, reg_vec, penalty_matrix, lam, rand=rand,
-            )
-            qhat = conformal_quantile(scores, n_cal, alpha)
-            ps_val = build_raps_prediction_sets_binary_dist(
-                val_smx, reg_vec, penalty_matrix, lam, qhat,
-                rand=rand, disallow_zero_sets=disallow_zero,
-            )
-            size_val = ps_val.sum(axis=1).mean()
-            if lam == 0:
-                opt_size = size_val + 10; opt_lamda = 0
-            elif size_val < opt_size:
-                opt_size = size_val; opt_lamda = lam
+        if fixed_lambda is not None:
+            opt_lamda = float(fixed_lambda)
+        else:
+            opt_lamda = 0; opt_size = float("inf")
+            for lam in lamda_2_values:
+                # evaluate on val using qhat from cal
+                scores = raps_cal_scores_binary_dist(
+                    cal_smx, cal_labels, reg_vec, penalty_matrix, lam, rand=rand,
+                )
+                qhat = conformal_quantile(scores, n_cal, alpha)
+                ps_val = build_raps_prediction_sets_binary_dist(
+                    val_smx, reg_vec, penalty_matrix, lam, qhat,
+                    rand=rand, disallow_zero_sets=disallow_zero,
+                )
+                size_val = ps_val.sum(axis=1).mean()
+                if lam == 0:
+                    opt_size = size_val + 10; opt_lamda = 0
+                elif size_val < opt_size:
+                    opt_size = size_val; opt_lamda = lam
 
         # refit qhat on cal only
         scores = raps_cal_scores_binary_dist(

@@ -101,6 +101,7 @@ def run_saps_ms_binary_dist_avg_opt(
     lamda_3_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
     SAPS + binary distance penalty (MS cosine-similarity matrix).
@@ -117,7 +118,7 @@ def run_saps_ms_binary_dist_avg_opt(
     """
     return _run_saps_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_2, lamda_3_values, strict_split=False, config=config,
+        lamda_2, lamda_3_values, strict_split=False, config=config, fixed_lambda=fixed_lambda,
     )
 
 
@@ -130,6 +131,7 @@ def run_saps_ms_binary_dist_avg_opt_strict_split(
     lamda_3_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
     SAPS + binary distance penalty (MS) – exchangeability-safe.
@@ -139,7 +141,7 @@ def run_saps_ms_binary_dist_avg_opt_strict_split(
     """
     return _run_saps_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_2, lamda_3_values, strict_split=True, config=config,
+        lamda_2, lamda_3_values, strict_split=True, config=config, fixed_lambda=fixed_lambda,
     )
 
 
@@ -149,7 +151,7 @@ def run_saps_ms_binary_dist_avg_opt_strict_split(
 
 def _run_saps_binary_dist(
     probabilities, labels, adjacency_matrix, penalty_matrix,
-    lamda_2, lamda_3_values, *, strict_split: bool, config,
+    lamda_2, lamda_3_values, *, strict_split: bool, config, fixed_lambda: float | None = None,
 ) -> dict:
     cfg      = _make_config(config)
     alpha    = cfg["alpha"];  num_class = cfg["num_class"]
@@ -181,19 +183,22 @@ def _run_saps_binary_dist(
             cal_smx, test_smx = probabilities[cal_idx], probabilities[test_idx]
             cal_lbl, test_lbl = labels[cal_idx], labels[test_idx]
 
-        opt_lam3 = 0;  opt_sz = float("inf")
-        for lam3 in lamda_3_values:
-            sc = saps_cal_scores_binary_dist(
-                cal_smx, cal_lbl, lamda_2, lam3, penalty_matrix, rand=rand
-            )
-            qh = conformal_quantile(sc, n_cal, alpha)
-            if strict_split or not baseline:
-                ps_v = build_saps_prediction_sets_binary_dist(
-                    val_smx, lamda_2, lam3, penalty_matrix, qh, rand=rand
+        if fixed_lambda is not None:
+            opt_lam3 = float(fixed_lambda)
+        else:
+            opt_lam3 = 0;  opt_sz = float("inf")
+            for lam3 in lamda_3_values:
+                sc = saps_cal_scores_binary_dist(
+                    cal_smx, cal_lbl, lamda_2, lam3, penalty_matrix, rand=rand
                 )
-                sz_v = ps_v.sum(axis=1).mean()
-                if lam3 == 0:  opt_sz = sz_v + 10;  opt_lam3 = 0
-                elif sz_v < opt_sz:  opt_sz = sz_v;  opt_lam3 = lam3
+                qh = conformal_quantile(sc, n_cal, alpha)
+                if strict_split or not baseline:
+                    ps_v = build_saps_prediction_sets_binary_dist(
+                        val_smx, lamda_2, lam3, penalty_matrix, qh, rand=rand
+                    )
+                    sz_v = ps_v.sum(axis=1).mean()
+                    if lam3 == 0:  opt_sz = sz_v + 10;  opt_lam3 = 0
+                    elif sz_v < opt_sz:  opt_sz = sz_v;  opt_lam3 = lam3
 
         sc   = saps_cal_scores_binary_dist(
             cal_smx, cal_lbl, lamda_2, opt_lam3, penalty_matrix, rand=rand

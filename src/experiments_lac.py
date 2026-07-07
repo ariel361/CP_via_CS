@@ -97,6 +97,7 @@ def run_lac_ma_binary_dist_avg_opt(
     lamda_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
     LAC + binary distance penalty, MA adjacency matrix.
@@ -105,7 +106,7 @@ def run_lac_ma_binary_dist_avg_opt(
     """
     return _run_lac_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_real,
-        lamda_values, strict_split=False, config=config,
+        lamda_values, strict_split=False, config=config, fixed_lambda=fixed_lambda,
     )
 
 
@@ -117,6 +118,7 @@ def run_lac_ms_binary_dist_avg_opt(
     lamda_values: list[float],
     *,
     config: dict | None = None,
+    fixed_lambda: float | None = None,
 ) -> dict:
     """
     LAC + binary distance penalty, MS cosine-similarity matrix.
@@ -125,7 +127,7 @@ def run_lac_ms_binary_dist_avg_opt(
     """
     return _run_lac_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_values, strict_split=False, config=config,
+        lamda_values, strict_split=False, config=config, fixed_lambda=fixed_lambda,
     )
 
 
@@ -211,7 +213,7 @@ def run_lac_ma_superclass_avg_opt_strict_split(
 
 def _run_lac_binary_dist(
     probabilities, labels, adjacency_matrix, penalty_matrix,
-    lamda_values, *, strict_split: bool, config,
+    lamda_values, *, strict_split: bool, config, fixed_lambda: float | None = None,
 ) -> dict:
     cfg       = _make_config(config)
     alpha     = cfg["alpha"];  num_class = cfg["num_class"];  T_ = cfg["T"]
@@ -242,15 +244,18 @@ def _run_lac_binary_dist(
             cal_smx, test_smx = probabilities[cal_idx], probabilities[test_idx]
             cal_lbl, test_lbl = labels[cal_idx], labels[test_idx]
 
-        opt_lam = 0;  opt_sz = float("inf")
-        for lam in lamda_values:
-            sc = lac_cal_scores_binary_dist(cal_smx, cal_lbl, penalty_matrix, lam)
-            qh = conformal_quantile(sc, n_cal, alpha)
-            if strict_split or not baseline:
-                ps_v   = build_lac_prediction_sets_binary_dist(val_smx, penalty_matrix, lam, qh)
-                sz_v   = ps_v.sum(axis=1).mean()
-                if lam == 0:   opt_sz = sz_v + 10;  opt_lam = 0
-                elif sz_v < opt_sz:  opt_sz = sz_v;  opt_lam = lam
+        if fixed_lambda is not None:
+            opt_lam = float(fixed_lambda)
+        else:
+            opt_lam = 0;  opt_sz = float("inf")
+            for lam in lamda_values:
+                sc = lac_cal_scores_binary_dist(cal_smx, cal_lbl, penalty_matrix, lam)
+                qh = conformal_quantile(sc, n_cal, alpha)
+                if strict_split or not baseline:
+                    ps_v   = build_lac_prediction_sets_binary_dist(val_smx, penalty_matrix, lam, qh)
+                    sz_v   = ps_v.sum(axis=1).mean()
+                    if lam == 0:   opt_sz = sz_v + 10;  opt_lam = 0
+                    elif sz_v < opt_sz:  opt_sz = sz_v;  opt_lam = lam
 
         sc   = lac_cal_scores_binary_dist(cal_smx, cal_lbl, penalty_matrix, opt_lam)
         qhat = conformal_quantile(sc, n_cal, alpha)
