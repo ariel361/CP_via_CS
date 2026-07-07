@@ -7,7 +7,7 @@ LAC (Sadinle et al., 2019) uses score s(x, y) = 1 − p_y and includes class y
 whenever that score falls below the conformal threshold q̂.
 
 Three penalty variants are implemented, each in an *original* version
-(paper-replication, may merge val back into cal) and a *exchangability* version
+(paper-replication, may merge val back into cal) and a *strict_split* version
 (exchangeability-safe, strict cal / val / test separation).
 
 Original (not exchangeability-safe when λ > 0):
@@ -16,10 +16,10 @@ Original (not exchangeability-safe when λ > 0):
     run_lac_ms_binary_dist_avg_opt
     run_lac_ma_superclass_avg_opt
 
-exchangability (exchangeability-safe):
-    run_lac_ma_binary_dist_avg_opt_exchangability
-    run_lac_ms_binary_dist_avg_opt_exchangability
-    run_lac_ma_superclass_avg_opt_exchangability
+strict_split (exchangeability-safe):
+    run_lac_ma_binary_dist_avg_opt_strict_split
+    run_lac_ms_binary_dist_avg_opt_strict_split
+    run_lac_ma_superclass_avg_opt_strict_split
 """
 
 from __future__ import annotations
@@ -44,7 +44,7 @@ from .metrics import (
     print_metrics,
 )
 from .experiments_original import _make_config, _aggregate, _format_for_print
-from .experiments_tuned_lambda_exchangability import _three_way_split
+from .experiments_tuned_lambda_strict_split import _three_way_split
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -101,11 +101,11 @@ def run_lac_ma_binary_dist_avg_opt(
     """
     LAC + binary distance penalty, MA adjacency matrix.
     λ selected by min avg-set-size on a validation fold.
-    Not exchangeability-safe – see exchangability version.
+    Not exchangeability-safe – see strict_split version.
     """
     return _run_lac_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_real,
-        lamda_values, exchangability=False, config=config,
+        lamda_values, strict_split=False, config=config,
     )
 
 
@@ -121,11 +121,11 @@ def run_lac_ms_binary_dist_avg_opt(
     """
     LAC + binary distance penalty, MS cosine-similarity matrix.
     λ selected by min avg-set-size on a validation fold.
-    Not exchangeability-safe – see exchangability version.
+    Not exchangeability-safe – see strict_split version.
     """
     return _run_lac_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_values, exchangability=False, config=config,
+        lamda_values, strict_split=False, config=config,
     )
 
 
@@ -145,19 +145,19 @@ def run_lac_ma_superclass_avg_opt(
     """
     LAC + within-superclass mass penalty (MA).
     λ selected by min avg-set-size on a validation fold.
-    Not exchangeability-safe – see exchangability version.
+    Not exchangeability-safe – see strict_split version.
     """
     return _run_lac_superclass(
         probabilities, labels, adjacency_matrix, adjacency_matrix_smaller,
-        lamda_values, exchangability=False, config=config,
+        lamda_values, strict_split=False, config=config,
     )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# exchangability (exchangeability-safe) versions
+# strict_split (exchangeability-safe) versions
 # ─────────────────────────────────────────────────────────────────────────────
 
-def run_lac_ma_binary_dist_avg_opt_exchangability(
+def run_lac_ma_binary_dist_avg_opt_strict_split(
     probabilities: np.ndarray,
     labels: np.ndarray,
     adjacency_matrix: np.ndarray,
@@ -169,11 +169,11 @@ def run_lac_ma_binary_dist_avg_opt_exchangability(
     """LAC + MA binary distance penalty – exchangeability-safe."""
     return _run_lac_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_real,
-        lamda_values, exchangability=True, config=config,
+        lamda_values, strict_split=True, config=config,
     )
 
 
-def run_lac_ms_binary_dist_avg_opt_exchangability(
+def run_lac_ms_binary_dist_avg_opt_strict_split(
     probabilities: np.ndarray,
     labels: np.ndarray,
     adjacency_matrix: np.ndarray,
@@ -185,11 +185,11 @@ def run_lac_ms_binary_dist_avg_opt_exchangability(
     """LAC + MS binary distance penalty – exchangeability-safe."""
     return _run_lac_binary_dist(
         probabilities, labels, adjacency_matrix, adjacency_matrix_ms,
-        lamda_values, exchangability=True, config=config,
+        lamda_values, strict_split=True, config=config,
     )
 
 
-def run_lac_ma_superclass_avg_opt_exchangability(
+def run_lac_ma_superclass_avg_opt_strict_split(
     probabilities: np.ndarray,
     labels: np.ndarray,
     adjacency_matrix: np.ndarray,
@@ -201,7 +201,7 @@ def run_lac_ma_superclass_avg_opt_exchangability(
     """LAC + superclass mass penalty (MA) – exchangeability-safe."""
     return _run_lac_superclass(
         probabilities, labels, adjacency_matrix, adjacency_matrix_smaller,
-        lamda_values, exchangability=True, config=config,
+        lamda_values, strict_split=True, config=config,
     )
 
 
@@ -211,7 +211,7 @@ def run_lac_ma_superclass_avg_opt_exchangability(
 
 def _run_lac_binary_dist(
     probabilities, labels, adjacency_matrix, penalty_matrix,
-    lamda_values, *, exchangability: bool, config,
+    lamda_values, *, strict_split: bool, config,
 ) -> dict:
     cfg       = _make_config(config)
     alpha     = cfg["alpha"];  num_class = cfg["num_class"];  T_ = cfg["T"]
@@ -222,7 +222,7 @@ def _run_lac_binary_dist(
     sc_acc    = 0.0;  avg_sizes: list[float] = []
 
     for _ in range(T_):
-        if exchangability:
+        if strict_split:
             cal_smx, cal_lbl, val_smx, val_lbl, test_smx, test_lbl, n_cal = \
                 _three_way_split(probabilities, labels, cfg)
         else:
@@ -246,7 +246,7 @@ def _run_lac_binary_dist(
         for lam in lamda_values:
             sc = lac_cal_scores_binary_dist(cal_smx, cal_lbl, penalty_matrix, lam)
             qh = conformal_quantile(sc, n_cal, alpha)
-            if exchangability or not baseline:
+            if strict_split or not baseline:
                 ps_v   = build_lac_prediction_sets_binary_dist(val_smx, penalty_matrix, lam, qh)
                 sz_v   = ps_v.sum(axis=1).mean()
                 if lam == 0:   opt_sz = sz_v + 10;  opt_lam = 0
@@ -269,7 +269,7 @@ def _run_lac_binary_dist(
 
 def _run_lac_superclass(
     probabilities, labels, adjacency_matrix, adjacency_matrix_smaller,
-    lamda_values, *, exchangability: bool, config,
+    lamda_values, *, strict_split: bool, config,
 ) -> dict:
     cfg      = _make_config(config)
     alpha    = cfg["alpha"];  num_class = cfg["num_class"]
@@ -281,7 +281,7 @@ def _run_lac_superclass(
     sc_acc   = 0.0;  avg_sizes: list[float] = []
 
     for _ in range(T_):
-        if exchangability:
+        if strict_split:
             cal_smx, cal_lbl, val_smx, val_lbl, test_smx, test_lbl, n_cal = \
                 _three_way_split(probabilities, labels, cfg)
         else:
@@ -305,7 +305,7 @@ def _run_lac_superclass(
         for lam in lamda_values:
             sc = lac_cal_scores_superclass(cal_smx, cal_lbl, adjacency_matrix_smaller, lam)
             qh = conformal_quantile(sc, n_cal, alpha)
-            if exchangability or not baseline:
+            if strict_split or not baseline:
                 ps_v  = build_lac_prediction_sets_superclass(
                     val_smx, adjacency_matrix, adjacency_matrix_smaller,
                     lam, qh, num_class, size_sc,
