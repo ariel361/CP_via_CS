@@ -19,14 +19,14 @@ This is the code accompanying the paper: [Enhancing Conformal Prediction via Cla
 
 ## Overview
 
-Standard conformal prediction treats all misclassifications equally. This work exploits the **hierarchical structure of class labels** — penalising prediction sets that include classes semantically far from the true label — to produce sets that are both *smaller* and *more semantically coherent*.
+Standard conformal prediction treats all misclassifications equally. This work utilizes similarity between class to improve conformal prediction metrics — penalising prediction sets that include classes semantically far from the true label — to produce sets that are both *smaller* and *more semantically coherent*.
 
 We introduce two penalty variants on top of established score functions:
 
-| Penalty | Abbreviation | Definition |
-|:--------|:------------:|:-----------|
-| Superclass mass | **MA** | Cumulative softmax mass from classes outside the true superclass, accumulated up to the rank of the true label |
-| Binary distance | **MS** | `λ · (1 − A[y, ŷ])` where `A` is a cosine-similarity matrix between class embeddings and `ŷ` is the top-1 prediction |
+| Penalty | Abbreviation |
+|:--------|:------------:|
+| Model Agnostic | **MA** |
+| Model Specific | **MS** |
 
 Both penalties are applied to three score families — **RAPS**, **LAC**, and **SAPS**
 
@@ -76,16 +76,6 @@ $$s(x,y) = \begin{cases} U \cdot p_{\max} & \text{if } L(y) = 0 \\ p_{\max} + (L
 
 $\lambda_2$ controls rank spacing: small values approach LAC; large values give uniform spacing and smaller average sets when the model is confident.
 
----
-
-## Original vs exchangeability protocol
-
-When $\lambda > 0$, selecting it on a held-out validation fold and then reusing that fold in the calibration set violates the exchangeability assumption that underpins conformal coverage guarantees.
-
-| Protocol | Cal / Val / Test | Coverage guarantee |
-|:---------|:----------------:|:------------------:|
-| `_original` | Val merged back into Cal after λ selection | ✗ when λ > 0 |
-| `_strict_split` | Strict three-way split throughout | ✓ always |
 
 ---
 
@@ -130,7 +120,7 @@ If you use this code, please cite:
 @article{fargion2026enhancing,
   title   = {Enhancing Conformal Prediction via Class Similarity},
   author  = {Fargion, Ariel and Dabah, Lahav and Tirer, Tom},
-  journal = {arXiv preprint arXiv:2511.19359},
+  journal = {ICML 2026},
   year    = {2026}
 }
 ```
